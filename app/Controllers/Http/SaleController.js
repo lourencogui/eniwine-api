@@ -9,6 +9,8 @@
  */
 const Sale = use('App/Models/Sale')
 const Wine = use('App/Models/Wine')
+const Kue = use('Kue')
+const Job = use('App/Jobs/SendNewSaleEmail')
 class SaleController {
   /**
    * Show a list of all sales.
@@ -32,15 +34,18 @@ class SaleController {
    */
   async store ({ request, response, auth }) {
     const data = request.input('wines')
-
+    const { user } = auth
+    let total = 0
     // VALIDA SE POSSUI ESTOQUE
     for (let i = 0; i < data.length; i++) {
       const { id, quantity } = data[i]
       const wine = await Wine.findByOrFail('id', id)
       if (wine.available < quantity) return response.json({ message: 'Não possui estoque' })
+
+      total += (quantity * wine.price)
     }
 
-    const sale = await Sale.create({ user_id: auth.user.id })
+    const sale = await Sale.create({ user_id: auth.user.id, total })
 
     // RELACIONA OS PRODUTOS COM A COMPRA
     for (let i = 0; i < data.length; i++) {
@@ -60,6 +65,10 @@ class SaleController {
       wine.merge({ available: newQuantity })
       await wine.save()
     }
+
+    const wines = await sale.wines().fetch()
+    // console.log(wines.rows)
+    Kue.dispatch(Job.key, { wines, user, sale }, { attempts: 3 })
 
     return response.json({ success: true })
   }

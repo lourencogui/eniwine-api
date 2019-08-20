@@ -1,0 +1,12 @@
+<p>
+  Olá
+  <strong>{{ user.username }} </strong>, obrigado por comprar conosco, confira a lista de vinhos escolhidos por você:
+</p>
+<ul>
+  @each(wine in wines)
+    <li>
+      {{ wine.name }}
+    </li>
+  @endeach
+</ul>
+<p> Em um total de: R$ <strong>{{ sale.total }}</strong> </p>

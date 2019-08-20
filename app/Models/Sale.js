@@ -4,6 +4,12 @@
 const Model = use('Model')
 
 class Sale extends Model {
+  static boot () {
+    super.boot()
+
+    // this.addHook('afterCreate', 'SaleHook.sendSaleEmail')
+  }
+
   user () {
     return this.belongsTo('App/Models/User')
   }

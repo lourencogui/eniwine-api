@@ -2,10 +2,20 @@
 
 const Route = use('Route')
 
-Route.post('users', 'UserController.store')
-Route.post('sessions', 'SessionController.store')
+// USER
+Route.post('users', 'UserController.store').validator('User')
+Route.post('sessions', 'SessionController.store').validator('Session')
 
+// PASSWORD
+Route.post('passwords', 'ForgotPasswordController.store')
+Route.put('passwords', 'ForgotPasswordController.update').validator('ForgotPassword')
+
+// WINE
 Route.group(() => {
-  Route.resource('wines', 'WineController').apiOnly()
-  Route.resource('sales', 'SaleController').apiOnly()
+  Route.resource('wines', 'WineController').apiOnly().validator(new Map([
+    [['wines.store'], ['Wine']]
+  ]))
+  Route.resource('sales', 'SaleController').apiOnly().validator(new Map([
+    [['sales.store'], ['Sale']]
+  ]))
 }).middleware(['auth'])
