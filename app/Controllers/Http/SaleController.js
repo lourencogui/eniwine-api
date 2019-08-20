@@ -11,6 +11,8 @@ const Sale = use('App/Models/Sale')
 const Wine = use('App/Models/Wine')
 const Kue = use('Kue')
 const Job = use('App/Jobs/SendNewSaleEmail')
+const Database = use('Database')
+
 class SaleController {
   /**
    * Show a list of all sales.
@@ -36,6 +38,7 @@ class SaleController {
     const data = request.input('wines')
     const { user } = auth
     let total = 0
+
     // VALIDA SE POSSUI ESTOQUE
     for (let i = 0; i < data.length; i++) {
       const { id, quantity } = data[i]
@@ -45,14 +48,15 @@ class SaleController {
       total += (quantity * wine.price)
     }
 
-    const sale = await Sale.create({ user_id: auth.user.id, total })
+    const trx = await Database.beginTransaction()
+    const sale = await Sale.create({ user_id: auth.user.id, total }, trx)
 
     // RELACIONA OS PRODUTOS COM A COMPRA
     for (let i = 0; i < data.length; i++) {
       const { id, quantity } = data[i]
       await sale.wines().attach([id], (row) => {
         row.quantity = quantity
-      })
+      }, trx)
     }
 
     // ATUALIZANDO QUANTIDADE DISPONIVEL
@@ -63,8 +67,9 @@ class SaleController {
       const newQuantity = wine.available - quantity
 
       wine.merge({ available: newQuantity })
-      await wine.save()
+      await wine.save(trx)
     }
+    await trx.commit()
 
     const wines = await sale.wines().fetch()
     // console.log(wines.rows)

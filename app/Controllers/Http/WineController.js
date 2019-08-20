@@ -9,6 +9,8 @@
  */
 
 const Wine = use('App/Models/Wine')
+const Database = use('Database')
+
 class WineController {
   /**
    * Show a list of all wines.
@@ -34,10 +36,11 @@ class WineController {
    * @param {Response} ctx.response
    */
   async store ({ request, response }) {
-    // const data = request.only(['name', 'type', 'description', 'size', 'price', 'available', 'avatar'])
     const data = request.only(['name', 'type', 'description', 'size', 'price', 'available'])
+    const trx = await Database.beginTransaction()
 
-    const wine = await Wine.create(data)
+    const wine = await Wine.create(data, trx)
+    await trx.commit()
     return wine
   }
 
